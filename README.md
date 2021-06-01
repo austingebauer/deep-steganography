@@ -20,6 +20,7 @@ unzip tiny-imagenet-200.zip
 Create Conda Environment:
 ```
 conda create --name deep-steganography --file requirements.txt
+conda activate deep-steganography
 ```
 
 ## Usage
