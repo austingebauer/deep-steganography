@@ -1,8 +1,8 @@
 import os
 import torch.utils.data
 from torchvision.datasets.folder import default_loader
-from torchvision.io import read_image
 from torchvision.datasets.utils import verify_str_arg
+from PIL import Image
 
 class TinyImageNet(torch.utils.data.Dataset):
     base_folder = 'tiny-imagenet-200/'
@@ -21,10 +21,17 @@ class TinyImageNet(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         img_path, label = self.data[index]
-        image = read_image(img_path)
+        image = Image.open(img_path)
 
         if self.transform is not None:
-            image = self.transform(image)
+            try:
+                image = self.transform(image)
+            except:
+                # TODO: ./tiny-imagenet-200/train/n04099969/images/n04099969_324.JPEG
+                #       is 8 bit color (1 channel)
+                #       Not sure why it's there. Need to filter these somehow.
+                print("Caught it!")
+                print(img_path)
 
         return image, label
 

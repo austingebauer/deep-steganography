@@ -62,5 +62,4 @@ class HidingNetwork(nn.Module):
 
 
 def gaussian(tensor, mean=0, stddev=0.1):
-    noise = torch.nn.init.normal(torch.Tensor(tensor.size()), 0, 0.1)
-    return Variable(tensor + noise)
+    return Variable(tensor + torch.randn(tensor.size()) * stddev + mean)

@@ -1,3 +1,4 @@
 .ipynb_checkpoints
 .idea
 tiny-imagenet-200
+__pycache__/

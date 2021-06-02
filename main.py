@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.autograd import Variable
+from torchvision import transforms
 from torch import utils
 import torch.nn.functional as F
 import torch.optim as optim
@@ -12,8 +13,8 @@ import torch.utils.data
 
 std = [0.229, 0.224, 0.225]
 mean = [0.485, 0.456, 0.406]
-num_epochs = 1
-batch_size = 32
+num_epochs = 3
+batch_size = 2
 learning_rate = 0.0001
 beta = 1
 
@@ -45,26 +46,38 @@ def imshow(img, idx, learning_rate, beta):
     return
 
 if __name__ == "__main__":
-    train_dataset = TinyImageNet(split='train')
-    test_dataset = TinyImageNet(split='val')
+    train_dataset = TinyImageNet(split='train', transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std)
+    ]))
+    test_dataset = TinyImageNet(split='val', transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std)
+    ]))
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
+    # Set the torch seed
+    torch.manual_seed(1)
+
+    # Create the model object
     model = Model()
-    use_cuda = torch.cuda.is_available()
-    if use_cuda:
-        model = model.cuda()
-    print(model)
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print("There are", num_params, "parameters in this model")
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    loss_history = []
 
+    nsamples = 208
+    loss_history = []
     for epoch in range(num_epochs):
+        model.train()
 
         train_losses = []
-        for features, labels in tqdm.tqdm(train_dataloader):
-            if use_cuda:
-                features, labels = features.cuda(), labels.cuda()
+        for idx, data in enumerate(train_dataloader):
+            if idx > nsamples:
+                break
+
+            features, _ = data
 
             # Saves secret images and secret covers
             train_covers = features[:len(features)//2]
@@ -84,13 +97,11 @@ if __name__ == "__main__":
             optimizer.step()
 
             # Saves training loss
-            train_losses.append(train_loss.data[0])
-            loss_history.append(train_loss.data[0])
+            train_losses.append(train_loss.item())
+            loss_history.append(train_loss.item())
 
-            # Prints mini-batch losses
-            # print('Training: Batch {0}/{1}. Loss of {2:.4f}, cover loss of {3:.4f}, secret loss of {4:.4f}'
-            # .format(inputs + 1, len(train_dataloader), train_loss.data[0], train_loss_cover.data[0],
-            # train_loss_secret.data[0]))
+            print('Training: Batch {0}/{1}. Loss of {2:.4f}, cover loss of {3:.4f}, secret loss of {4:.4f}'.format(
+                idx+1, len(train_dataloader), train_loss.item(), train_loss_cover.item(), train_loss_secret.item()))
 
         mean_train_loss = np.mean(train_losses)
 
@@ -102,39 +113,3 @@ if __name__ == "__main__":
     plt.ylabel('Loss')
     plt.xlabel('Batch')
     plt.show()
-
-    # test_losses = []
-    # # Show images
-    # for idx, test_batch in enumerate(test_dataloader):
-    #     # Saves images
-    #     dat, _ = test_batch
-    #
-    #     # Saves secret images and secret covers
-    #     test_secret = dat[:len(dat)//2]
-    #     test_cover = dat[len(dat)//2:]
-    #
-    #     # Creates variable from secret and cover images
-    #     test_secret = Variable(test_secret, volatile=True)
-    #     test_cover = Variable(test_cover, volatile=True)
-    #
-    #     # Compute output
-    #     test_hidden, test_output = model(test_secret, test_cover)
-    #
-    #     # Calculate loss
-    #     test_loss, loss_cover, loss_secret = customized_loss(test_output, test_hidden, test_secret, test_cover, beta)
-    #
-    #     if idx in [1, 2, 3, 4]:
-    #         print('Total loss: {:.2f} \nLoss on secret: {:.2f} \nLoss on cover: {:.2f}'.format(test_loss.data[0], loss_secret.data[0], loss_cover.data[0]))
-    #
-    #         # Creates img tensor
-    #         imgs = [test_secret.data, test_output.data, test_cover.data, test_hidden.data]
-    #         imgs_tsor = torch.cat(imgs, 0)
-    #
-    #         # Prints Images
-    #         imshow(utils.make_grid(imgs_tsor), idx+1, learning_rate=learning_rate, beta=beta)
-    #
-    #     test_losses.append(test_loss.data[0])
-    #
-    # mean_test_loss = np.mean(test_losses)
-    #
-    # print('Average loss on test set: {:.2f}'.format(mean_test_loss))
