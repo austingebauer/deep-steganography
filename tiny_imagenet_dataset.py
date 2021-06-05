@@ -25,8 +25,6 @@ class TinyImageNet(torch.utils.data.Dataset):
         if split == 'val':
             self.dataset = self.create_validation_set()
 
-        print("loaded imagenet dataset")
-
     def create_training_set(self):
         training_set = []
         for c in os.listdir(self.train_dir):
@@ -39,7 +37,14 @@ class TinyImageNet(torch.utils.data.Dataset):
 
             random.shuffle(c_images)
             for img_name_i in c_images[0:self.images_per_class]:
-                training_set.append(os.path.join(c_dir, img_name_i))
+                img_path = os.path.join(c_dir, img_name_i)
+
+                # Ensure that the image is RGB
+                image = Image.open(img_path)
+                if len(image.getbands()) != 3:
+                    continue
+
+                training_set.append(img_path)
 
         random.shuffle(training_set)
         return training_set
@@ -50,7 +55,14 @@ class TinyImageNet(torch.utils.data.Dataset):
         val_images = os.listdir(val_dir)
 
         for img_name_i in val_images[0:self.num_test_images]:
-            validation_set.append(os.path.join(val_dir, img_name_i))
+            img_path = os.path.join(val_dir, img_name_i)
+
+            # Ensure that the image is RGB
+            image = Image.open(img_path)
+            if len(image.getbands()) != 3:
+                continue
+
+            validation_set.append(img_path)
 
         random.shuffle(validation_set)
         return validation_set
@@ -59,7 +71,7 @@ class TinyImageNet(torch.utils.data.Dataset):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        img_path, label = self.dataset[index]
+        img_path = self.dataset[index]
         image = Image.open(img_path)
 
         if self.transform is not None:
@@ -69,4 +81,4 @@ class TinyImageNet(torch.utils.data.Dataset):
                 print("Caught non-RGB image in dataset")
                 print(img_path)
 
-        return image, label
+        return image

@@ -110,7 +110,7 @@ class HidingNetwork(nn.Module):
         h6 = self.finalH5(mid)
         mid2 = torch.cat((h4, h5, h6), 1)
         out = self.finalH(mid2)
-        out_noise = gaussian(out.data, 0, 0.1)
+        out_noise = gaussian(out.data)
         return out, out_noise
 
 class RevealNetwork(nn.Module):
@@ -170,7 +170,7 @@ class RevealNetwork(nn.Module):
         return out
 
 
-def gaussian(tensor, mean=0, stddev=0.1):
+def gaussian(tensor, mean=0, stddev=0.01):
     return Variable(tensor + torch.randn(tensor.size()) * stddev + mean)
 
 

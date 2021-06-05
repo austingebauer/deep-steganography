@@ -9,19 +9,32 @@ import model
 from tiny_imagenet_dataset import TinyImageNet
 import torch.utils.data
 
-std = [0.229, 0.224, 0.225]
-mean = [0.485, 0.456, 0.406]
-num_epochs = 3
-batch_size = 2
-learning_rate = 0.0001
-beta = 1
+STD = [0.229, 0.224, 0.225]
+MEAN = [0.485, 0.456, 0.406]
+EPOCHS = 1
+BATCH_SIZE = 32
+LEARNING_RATE = 0.0001
+BETA = 1
 
+def lr_schedule(epoch_idx):
+    if epoch_idx < 200:
+        return 0.001
+    elif epoch_idx < 400:
+        return 0.0003
+    elif epoch_idx < 600:
+        return 0.0001
+    else:
+        return 0.00003
 
-def customized_loss(S_prime, C_prime, S, C, B):
+def full_loss(S_prime, C_prime, S, C, B):
     loss_cover = torch.nn.functional.mse_loss(C_prime, C)
     loss_secret = torch.nn.functional.mse_loss(S_prime, S)
     loss_all = loss_cover + B * loss_secret
     return loss_all, loss_cover, loss_secret
+
+
+def reveal_loss(y_true, y_pred):
+    print('not done yet')
 
 
 def denormalize(image, std, mean):
@@ -31,7 +44,7 @@ def denormalize(image, std, mean):
 
 
 def imshow(img, idx, learning_rate, beta):
-    img = denormalize(img, std, mean)
+    img = denormalize(img, STD, MEAN)
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.title('Example '+str(idx)+', lr='+str(learning_rate)+', B='+str(beta))
@@ -42,46 +55,45 @@ def imshow(img, idx, learning_rate, beta):
 if __name__ == "__main__":
     train_dataset = TinyImageNet(split='train', transform=transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
+        transforms.Normalize(mean=MEAN, std=STD)
     ]))
     test_dataset = TinyImageNet(split='val', transform=transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
+        transforms.Normalize(mean=MEAN, std=STD)
     ]))
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-    # Create the model object
     model = model.CNN()
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print("There are", num_params, "parameters in this model")
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    model.train()
-    loss_history = []
+    print("Number of training examples: ", len(train_dataset))
+    print("Number of validation examples: ", len(test_dataset))
+    print("Number of parameters in the model: ", num_params)
 
     # Train the model
-    for epoch in range(num_epochs):
+    model.train()
+    loss_history = []
+    for epoch in range(EPOCHS):
         train_losses = []
-        for idx, data in enumerate(train_dataloader):
-            # Underscore is labels since enumerate gives us idx, features, labels
-            features, _ = data
+        for idx, input in enumerate(train_dataloader):
 
             # Reject if not 3 channel tensor
-            if len(features.size()) == 4 and features.size()[1] != 3:
+            if len(input.size()) == 4 and input.size()[1] != 3:
                 print("skipping tensor that does not have 3 channels (RGB)")
                 continue
 
-            if len(features) != batch_size:
-                print(len(features))
-                print(features.shape)
+            if len(input) != BATCH_SIZE:
+                print(len(input))
+                print(input.shape)
                 print("skipping batch that is not of length 2")
                 continue
 
-            # Saves secret images and secret covers
-            train_secrets = features[len(features)//2:]
-            train_covers = features[:len(features)//2]
+            # We split training set into two halves.
+            # First half is used for training as secret images, second half for cover images.
+            train_secrets = input[len(input)//2:]
+            train_covers = input[:len(input)//2]
 
             # Creates variable from secret and cover images
             train_secrets = Variable(train_secrets, requires_grad=False)
@@ -92,7 +104,7 @@ if __name__ == "__main__":
             train_hidden, train_revealed = model(train_secrets, train_covers)
 
             # Calculate loss and perform backprop
-            train_loss, train_loss_cover, train_loss_secret = customized_loss(train_revealed, train_hidden, train_secrets, train_covers, beta)
+            train_loss, train_loss_cover, train_loss_secret = full_loss(train_revealed, train_hidden, train_secrets, train_covers, BETA)
             train_loss.backward()
             optimizer.step()
 
@@ -106,7 +118,7 @@ if __name__ == "__main__":
         mean_train_loss = np.mean(train_losses)
 
         # Prints epoch average loss
-        print('Epoch [{0}/{1}], Average_loss: {2:.4f}'.format(epoch+1, num_epochs, mean_train_loss))
+        print('Epoch [{0}/{1}], Average_loss: {2:.4f}'.format(epoch + 1, EPOCHS, mean_train_loss))
 
     plt.plot(loss_history)
     plt.title('Model loss')
@@ -123,25 +135,19 @@ if __name__ == "__main__":
     model.eval()
 
     # Test the model
-    for idx, data in enumerate(test_dataloader):
-        # Saves images
-        features, _ = data
-
-        if len(features.size()) == 4 and features.size()[1] != 3:
+    for idx, input in enumerate(test_dataloader):
+        if len(input.size()) == 4 and input.size()[1] != 3:
             print("skipping tensor that does not have 3 channels (RGB)")
             continue
 
-        if len(features) != batch_size:
-            print(len(features))
-            print(features.shape)
+        if len(input) != BATCH_SIZE:
+            print(len(input))
+            print(input.shape)
             print("skipping batch that is not of length 2")
             continue
 
-        # Saves secret images and secret covers
-        test_secret = features[:len(features)//2]
-        test_cover = features[len(features)//2:]
-
-        # Creates variable from secret and cover images
+        test_secret = input[:len(input)//2]
+        test_cover = input[len(input)//2:]
         test_secret = Variable(test_secret, volatile=True)
         test_cover = Variable(test_cover, volatile=True)
 
@@ -149,16 +155,14 @@ if __name__ == "__main__":
         test_hidden, test_revealed = model(test_secret, test_cover)
 
         # Calculate loss
-        test_loss, loss_cover, loss_secret = customized_loss(test_revealed, test_hidden, test_secret, test_cover, beta)
-
+        test_loss, loss_cover, loss_secret = full_loss(test_revealed, test_hidden, test_secret, test_cover, BETA)
         print('Total loss: {:.2f} \nLoss on secret: {:.2f} \nLoss on cover: {:.2f}'.format(test_loss.item(), loss_secret.item(), loss_cover.item()))
 
         # Creates img tensor
-        imgs = [test_secret.data, test_cover.data, test_hidden.data, test_revealed.data]
-        imgs_tsor = torch.cat(imgs, 0)
-
-        # Prints Images
-        imshow(utils.make_grid(imgs_tsor), idx+1, learning_rate=learning_rate, beta=beta)
+        if idx % 11 == 0:
+            imgs = [test_secret.data, test_cover.data, test_hidden.data, test_revealed.data]
+            imgs_tsor = torch.cat(imgs, 0)
+            imshow(utils.make_grid(imgs_tsor), idx + 1, learning_rate=LEARNING_RATE, beta=BETA)
 
         test_losses.append(test_loss.item())
 
