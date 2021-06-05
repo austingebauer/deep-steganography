@@ -2,84 +2,71 @@ import os
 import torch.utils.data
 from torchvision.datasets.utils import verify_str_arg
 from PIL import Image
+import random
+
+CLASSES_FILE = "wnids.txt"
+IMAGES_DIR = "images"
+IMAGE_FILE_EXT = ".JPEG"
+TRAIN_DIR = "train"
+VALIDATION_DIR = "val"
 
 class TinyImageNet(torch.utils.data.Dataset):
-    base_folder = 'tiny-imagenet-200/'
-
-    def __init__(self, root="./", split='train', transform=None):
-        self.root = root
-        self.dataset_path = os.path.join(root, self.base_folder)
-        self.split = verify_str_arg(split, "split", ("train", "val",))
+    def __init__(self, root_dir="./tiny-imagenet-200", split='train', transform=None, images_per_class_train=10, num_test_images=500):
+        verify_str_arg(split, "split", ("train", "val"))
         self.transform = transform
-        self.class_to_idx = self.find_classes()
-        # data is array of tuple (path, class)
-        self.data = self.make_dataset()
+        self.train_dir = os.path.join(root_dir, TRAIN_DIR)
+        self.val_dir = os.path.join(root_dir, VALIDATION_DIR)
+        self.images_per_class = images_per_class_train
+        self.num_test_images = num_test_images
+
+        if split == 'train':
+            self.dataset = self.create_training_set()
+
+        if split == 'val':
+            self.dataset = self.create_validation_set()
+
+        print("loaded imagenet dataset")
+
+    def create_training_set(self):
+        training_set = []
+        for c in os.listdir(self.train_dir):
+            c_dir = os.path.join(self.train_dir, c, IMAGES_DIR)
+            try:
+                c_images = os.listdir(c_dir)
+            except NotADirectoryError:
+                print(c_dir, " not a directory")
+                continue
+
+            random.shuffle(c_images)
+            for img_name_i in c_images[0:self.images_per_class]:
+                training_set.append(os.path.join(c_dir, img_name_i))
+
+        random.shuffle(training_set)
+        return training_set
+
+    def create_validation_set(self):
+        validation_set = []
+        val_dir = os.path.join(self.val_dir, IMAGES_DIR)
+        val_images = os.listdir(val_dir)
+
+        for img_name_i in val_images[0:self.num_test_images]:
+            validation_set.append(os.path.join(val_dir, img_name_i))
+
+        random.shuffle(validation_set)
+        return validation_set
 
     def __len__(self):
-        return len(self.data)
+        return len(self.dataset)
 
     def __getitem__(self, index):
-        img_path, label = self.data[index]
+        img_path, label = self.dataset[index]
         image = Image.open(img_path)
 
         if self.transform is not None:
             try:
                 image = self.transform(image)
             except:
-                # Some tiny imagenet images are 8 bit color (1 channel)
-                # Not sure why it's there. Need to filter these somehow.
-                print("Caught it!")
+                print("Caught non-RGB image in dataset")
                 print(img_path)
 
         return image, label
-
-    def find_classes(self):
-        class_file = os.path.join(self.dataset_path, 'wnids.txt')
-        with open(class_file) as r:
-            classes = list(map(lambda s: s.strip(), r.readlines()))
-
-        classes.sort()
-        class_to_idx = {classes[i]: i for i in range(len(classes))}
-        return class_to_idx
-
-    def make_dataset(self):
-        images = []
-        dir_path = os.path.join(self.root, self.base_folder, self.split)
-
-        if self.split == 'train':
-            for fname in sorted(os.listdir(dir_path)):
-                cls_fpath = os.path.join(dir_path, fname)
-                if os.path.isdir(cls_fpath):
-                    cls_imgs_path = os.path.join(cls_fpath, 'images')
-
-                    idx = 0
-                    sample = 4
-                    for imgname in sorted(os.listdir(cls_imgs_path)):
-                        idx += 1
-                        if idx == sample:
-                            break
-
-                        if os.path.basename(imgname).endswith(".JPEG"):
-                            path = os.path.join(cls_imgs_path, imgname)
-                            item = (path, self.class_to_idx[fname])
-                            images.append(item)
-
-                    if len(images) > 205:
-                        break
-        else:
-            imgs_path = os.path.join(dir_path, 'images')
-            imgs_annotations = os.path.join(dir_path, 'val_annotations.txt')
-
-            with open(imgs_annotations) as r:
-                data_info = map(lambda s: s.split('\t'), r.readlines())
-
-            cls_map = {line_data[0]: line_data[1] for line_data in data_info}
-            for imgname in sorted(os.listdir(imgs_path)):
-                if os.path.basename(imgname).endswith(".JPEG"):
-                    path = os.path.join(imgs_path, imgname)
-                    item = (path, self.class_to_idx[cls_map[imgname]])
-                    images.append(item)
-                    if len(images) > 20:
-                        break
-
-        return images

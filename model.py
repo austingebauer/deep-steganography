@@ -191,8 +191,10 @@ class CNN(nn.Module):
             print(cover.shape)
             raise
 
-        # TODO: why send in x_2_noise?
-        #       try to play with x_2_noise and x2 into reveal network
+        # TODO: Why send in x_2_noise?
+        #       Try to play with x_2_noise and x2 into reveal network
+        #       Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers)
+        #       Coming out with weird values from reveal network.
         x_2, x_2_noise = self.m2(mid)
         x_3 = self.m3(x_2)
         return x_2, x_3
