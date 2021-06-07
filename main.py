@@ -72,7 +72,7 @@ def train(train_loader, epoch, hide_net, reveal_net, criterion):
             epoch + 1, EPOCHS, i + 1, len(train_loader),
             err_hide.item(), err_reveal.item(), err_sum.item()))
 
-        if i % 5 == 0:
+        if i % 10 == 0:
             save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
                                rev_secret_img.data, epoch + 1, i + 1, './training')
 
@@ -114,7 +114,7 @@ def validate(val_loader, epoch, hide_net, reveal_net, criterion):
         err_sum = err_hide + beta_err_reveal
         sum_losses.append(err_sum.item())
 
-        if i % 5 == 0:
+        if i % 10 == 0:
             save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
                                rev_secret_img.data, epoch + 1, i + 1, './validation')
 
@@ -142,14 +142,14 @@ if __name__ == "__main__":
     train_dataset = TinyImageNet(split='train', transform=transforms.Compose([
         transforms.Resize([256, 256]),
         transforms.ToTensor(),
-    ]), images_per_class_train=1)
+    ]), images_per_class_train=20)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE,
                                                    shuffle=True, drop_last=True)
 
     val_dataset = TinyImageNet(split='val', transform=transforms.Compose([
         transforms.Resize([256, 256]),
         transforms.ToTensor(),
-    ]), num_val_images=64)
+    ]), num_val_images=200)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=BATCH_SIZE,
                                                  drop_last=True)
     print("Number of training examples: ", len(train_dataset))
