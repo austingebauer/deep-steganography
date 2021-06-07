@@ -64,7 +64,6 @@ class TinyImageNet(torch.utils.data.Dataset):
 
             validation_set.append(img_path)
 
-        random.shuffle(validation_set)
         return validation_set
 
     def __len__(self):

@@ -1,5 +1,6 @@
 import torch
 import sys
+import time
 from torch.autograd import Variable
 from torchvision import transforms
 import torch.optim as optim
@@ -12,7 +13,7 @@ import torchvision.utils as vutils
 import numpy as np
 
 
-EPOCHS = 2
+EPOCHS = 3
 BATCH_SIZE = 32
 BETA = 0.75
 
@@ -64,17 +65,17 @@ def train(train_loader, epoch, hide_net, reveal_net, criterion):
         optimizerH.step()
         optimizerR.step()
 
-        print('[%d/%d][%d/%d]\thide_loss: %.4f reveal_loss: %.4f sum_loss: %.4f' % (
+        print('[%d/%d][%d/%d] hide_loss: %.4f reveal_loss: %.4f sum_loss: %.4f' % (
             epoch + 1, EPOCHS, i + 1, len(train_loader),
             err_hide.item(), err_reveal.item(), err_sum.item()))
 
-        if i % 10 == 0:
+        if i % 7 == 0:
             save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
-                               rev_secret_img.data, epoch, i, './training')
+                               rev_secret_img.data, epoch + 1, i + 1, './training')
 
-    epoch_log = "epoch learning rate: optimizer_hide_lr = %.8f\toptimizer_reveal_lr = %.8f" % (
+    epoch_log = "epoch learning rate: optimizer_hide_lr = %.8f optimizer_reveal_lr = %.8f" % (
         optimizerH.param_groups[0]['lr'], optimizerR.param_groups[0]['lr']) + "\n"
-    epoch_log = epoch_log + "epoch_avg_hide_loss=%.6f\tepoch_avg_reveal_loss=%.6f\tepoch_avg_sum_loss=%.6f" % (
+    epoch_log = epoch_log + "epoch_avg_hide_loss=%.6f epoch_avg_reveal_loss=%.6f epoch_avg_sum_loss=%.6f" % (
         np.mean(hide_losses), np.mean(reveal_loss), np.mean(sum_loss))
     print(epoch_log)
 
@@ -109,15 +110,15 @@ def validate(val_loader, epoch, hide_net, reveal_net, criterion):
         err_reveal = criterion(rev_secret_img, secret_imgv)
         hide_losses.append(err_reveal.item())
 
-        if i % 10 == 0:
-            save_image_results(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
-                            './validation')
+        if i % 7 == 0:
+            save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
+                               rev_secret_img.data, epoch + 1, i + 1, './validation')
 
     avg_hide_loss = np.mean(hide_losses)
     avg_reveal_loss = np.mean(reveal_losses)
     avg_sum_loss = avg_hide_loss + BETA * avg_reveal_loss
 
-    val_log = "validation[%d] avg_hide_loss = %.6f\t avg_reveal_loss = %.6f\t avg_sum_loss = %.6f" % (
+    val_log = "validation[%d] avg_hide_loss = %.6f avg_reveal_loss = %.6f avg_sum_loss = %.6f" % (
         epoch + 1, avg_hide_loss, avg_reveal_loss, avg_sum_loss)
     print(val_log)
 
@@ -125,18 +126,11 @@ def validate(val_loader, epoch, hide_net, reveal_net, criterion):
 
 
 def save_image_results(this_batch_size, cover_image, container_image, secret_image, revealed_image, epoch, i, save_path):
-        # TODO: might not need this?
-        # with torch.no_grad():
-        #     originalFrames = cover_image.resize_(this_batch_size, 3, 256, 256)
-        #     containerFrames = container_image.resize_(this_batch_size, 3, 256, 256)
-        #     secretFrames = secret_image.resize_(this_batch_size, 3, 256, 256)
-        #     revSecFrames = revealed_image.resize_(this_batch_size, 3, 256, 256)
-
-        showContainer = torch.cat([cover_image, container_image], 0)
-        showReveal = torch.cat([secret_image, revealed_image], 0)
-        resultImg = torch.cat([showContainer, showReveal], 0)
-        resultImgName = '%s/result_images_epoch%03d_batch%04d.png' % (save_path, epoch, i)
-        vutils.save_image(resultImg, resultImgName, nrow=this_batch_size, padding=1, normalize=True)
+    covers_containers = torch.cat([cover_image, container_image], 0)
+    secrets_reveals = torch.cat([secret_image, revealed_image], 0)
+    image_results = torch.cat([covers_containers, secrets_reveals], 0)
+    image_results_file = "%s/result_images_epoch%d_batch%d.png" % (save_path, epoch, i)
+    vutils.save_image(image_results, image_results_file, nrow=this_batch_size, padding=1, normalize=True)
 
 
 def weights_init(m):
@@ -179,15 +173,26 @@ if __name__ == "__main__":
     optimizerR = optim.Adam(reveal_net.parameters(), lr=0.001, betas=(0.5, 0.999))
     schedulerR = ReduceLROnPlateau(optimizerR, mode='min', factor=0.2, patience=8, verbose=True)
 
+    total_elapsed_seconds = 0
     smallestLoss = sys.maxsize
     for epoch in range(EPOCHS):
-        train(train_dataloader, epoch, hide_net=hide_net, reveal_net=reveal_net, criterion=criterion)
+        start = time.time()
 
+        print("----- Training: START -----")
+        train(train_dataloader, epoch, hide_net=hide_net, reveal_net=reveal_net, criterion=criterion)
+        print("----- Training: END -----")
+
+        print("----- Validation: START -----")
         with torch.no_grad():
             hide_loss, reveal_loss, sum_loss = validate(val_dataloader, epoch, hide_net=hide_net, reveal_net=reveal_net, criterion=criterion)
+        print("----- Validation: END -----")
 
         schedulerH.step(sum_loss)
         schedulerR.step(reveal_loss)
+
+        elapsed = time.time() - start
+        total_elapsed_seconds += elapsed
+        print("Epoch %d: elapsed seconds %d" % (epoch + 1, elapsed))
 
         if sum_loss < smallestLoss:
             smallestLoss = sum_loss
@@ -197,3 +202,5 @@ if __name__ == "__main__":
             torch.save(reveal_net,
                        './checkpoints/reveal_net_epoch_%d,sum_loss=%.6f,reveal_loss=%.6f.pth' % (
                         epoch, sum_loss, reveal_loss))
+
+    print("Total elapsed seconds %d" % total_elapsed_seconds)
