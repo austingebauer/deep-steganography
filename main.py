@@ -11,6 +11,8 @@ import torch.utils.data
 import torch.nn as nn
 import torchvision.utils as vutils
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -70,7 +72,7 @@ def train(train_loader, epoch, hide_net, reveal_net, criterion):
             epoch + 1, EPOCHS, i + 1, len(train_loader),
             err_hide.item(), err_reveal.item(), err_sum.item()))
 
-        if i % 7 == 0:
+        if i % 5 == 0:
             save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
                                rev_secret_img.data, epoch + 1, i + 1, './training')
 
@@ -112,7 +114,7 @@ def validate(val_loader, epoch, hide_net, reveal_net, criterion):
         err_sum = err_hide + beta_err_reveal
         sum_losses.append(err_sum.item())
 
-        if i % 7 == 0:
+        if i % 5 == 0:
             save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
                                rev_secret_img.data, epoch + 1, i + 1, './validation')
 
@@ -140,14 +142,14 @@ if __name__ == "__main__":
     train_dataset = TinyImageNet(split='train', transform=transforms.Compose([
         transforms.Resize([256, 256]),
         transforms.ToTensor(),
-    ]), images_per_class_train=3)
+    ]), images_per_class_train=1)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE,
                                                    shuffle=True, drop_last=True)
 
     val_dataset = TinyImageNet(split='val', transform=transforms.Compose([
         transforms.Resize([256, 256]),
         transforms.ToTensor(),
-    ]), num_val_images=30)
+    ]), num_val_images=64)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=BATCH_SIZE,
                                                  drop_last=True)
     print("Number of training examples: ", len(train_dataset))
@@ -176,8 +178,8 @@ if __name__ == "__main__":
 
         print("----- Training: START -----")
         hide_losses, reveal_losses, sum_losses = train(train_dataloader, epoch, hide_net=hide_net, reveal_net=reveal_net, criterion=criterion)
-        train_hide_losses.append(hide_losses)
-        train_reveal_losses.append(reveal_losses)
+        train_hide_losses += hide_losses
+        train_reveal_losses += reveal_losses
 
         avg_hide_loss_t = np.mean(hide_losses)
         avg_reveal_loss_t = np.mean(reveal_losses)
@@ -190,16 +192,16 @@ if __name__ == "__main__":
         print(train_summary)
 
         plt.plot(train_hide_losses)
-        plt.title('Training Hide Loss')
+        plt.title('Training Loss - Hide Network')
         plt.ylabel('Loss')
         plt.xlabel('Batch')
-        plt.show()
+        plt.savefig('./loss_charts/train_hide_losses_epoch%d.png' % (epoch + 1))
 
         plt.plot(train_reveal_losses)
-        plt.title('Training Reveal Loss')
+        plt.title('Training Loss - Reveal Network')
         plt.ylabel('Loss')
         plt.xlabel('Batch')
-        plt.show()
+        plt.savefig('./loss_charts/train_reveal_losses_epoch%d.png' % (epoch + 1))
         print("----- Training: END -----")
 
         print("----- Validation: START -----")
