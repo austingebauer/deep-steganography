@@ -1,170 +1,199 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
+import sys
 from torch.autograd import Variable
-from torchvision import transforms, utils
-import torch.nn.functional as F
+from torchvision import transforms
 import torch.optim as optim
 import model
 from tiny_imagenet_dataset import TinyImageNet
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.utils.data
+import torch.nn as nn
+import torchvision.utils as vutils
+import numpy as np
 
-STD = [0.229, 0.224, 0.225]
-MEAN = [0.485, 0.456, 0.406]
-EPOCHS = 1
+
+EPOCHS = 2
 BATCH_SIZE = 32
-LEARNING_RATE = 0.0001
-BETA = 1
-
-def lr_schedule(epoch_idx):
-    if epoch_idx < 200:
-        return 0.001
-    elif epoch_idx < 400:
-        return 0.0003
-    elif epoch_idx < 600:
-        return 0.0001
-    else:
-        return 0.00003
-
-def full_loss(S_prime, C_prime, S, C, B):
-    loss_cover = torch.nn.functional.mse_loss(C_prime, C)
-    loss_secret = torch.nn.functional.mse_loss(S_prime, S)
-    loss_all = loss_cover + B * loss_secret
-    return loss_all, loss_cover, loss_secret
+BETA = 0.75
 
 
-def reveal_loss(y_true, y_pred):
-    print('not done yet')
+def print_net(net):
+    num_params = 0
+    for param in net.parameters():
+        num_params += param.numel()
+    print(str(net))
+    print('Total number of parameters: %d' % num_params)
 
 
-def denormalize(image, std, mean):
-    for t in range(3):
-        image[t, :, :] = (image[t, :, :] * std[t]) + mean[t]
-    return image
+def train(train_loader, epoch, hide_net, reveal_net, criterion):
+    hide_losses = []
+    reveal_losses = []
+    sum_losses = []
+
+    # switch to train mode
+    hide_net.train()
+    reveal_net.train()
+
+    for i, data in enumerate(train_loader, 0):
+        hide_net.zero_grad()
+        reveal_net.zero_grad()
+
+        this_batch_size = int(data.size()[0] / 2)
+        cover_img = data[0:this_batch_size, :, :, :]
+        secret_img = data[this_batch_size:this_batch_size * 2, :, :, :]
+
+        concat_img = torch.cat([cover_img, secret_img], dim=1)
+
+        concat_imgv = Variable(concat_img)
+        cover_imgv = Variable(cover_img)
+
+        container_img = hide_net(concat_imgv)
+        err_hide = criterion(container_img, cover_imgv)
+        hide_losses.append(err_hide.item())
+
+        rev_secret_img = reveal_net(container_img)
+        secret_imgv = Variable(secret_img)
+        err_reveal = criterion(rev_secret_img, secret_imgv)
+        reveal_losses.append(err_reveal.item())
+
+        beta_err_reveal = BETA * err_reveal
+        err_sum = err_hide + beta_err_reveal
+        sum_losses.append(err_sum.item())
+        err_sum.backward()
+
+        optimizerH.step()
+        optimizerR.step()
+
+        print('[%d/%d][%d/%d]\thide_loss: %.4f reveal_loss: %.4f sum_loss: %.4f' % (
+            epoch + 1, EPOCHS, i + 1, len(train_loader),
+            err_hide.item(), err_reveal.item(), err_sum.item()))
+
+        if i % 10 == 0:
+            save_image_results(this_batch_size, cover_img, container_img.data, secret_img,
+                               rev_secret_img.data, epoch, i, './training')
+
+    epoch_log = "epoch learning rate: optimizer_hide_lr = %.8f\toptimizer_reveal_lr = %.8f" % (
+        optimizerH.param_groups[0]['lr'], optimizerR.param_groups[0]['lr']) + "\n"
+    epoch_log = epoch_log + "epoch_avg_hide_loss=%.6f\tepoch_avg_reveal_loss=%.6f\tepoch_avg_sum_loss=%.6f" % (
+        np.mean(hide_losses), np.mean(reveal_loss), np.mean(sum_loss))
+    print(epoch_log)
 
 
-def imshow(img, idx, learning_rate, beta):
-    img = denormalize(img, STD, MEAN)
-    npimg = img.numpy()
-    plt.imshow(np.transpose(npimg, (1, 2, 0)))
-    plt.title('Example '+str(idx)+', lr='+str(learning_rate)+', B='+str(beta))
-    plt.show()
-    return
+def validate(val_loader, epoch, hide_net, reveal_net, criterion):
+    hide_losses = []
+    reveal_losses = []
+
+    # switch to validation mode
+    hide_net.eval()
+    reveal_net.eval()
+
+    for i, data in enumerate(val_loader, 0):
+        hide_net.zero_grad()
+        reveal_net.zero_grad()
+        all_pics = data
+        this_batch_size = int(all_pics.size()[0] / 2)
+
+        cover_img = all_pics[0:this_batch_size, :, :, :]
+        secret_img = all_pics[this_batch_size:this_batch_size * 2, :, :, :]
+
+        concat_img = torch.cat([cover_img, secret_img], dim=1)
+        concat_imgv = Variable(concat_img)
+        cover_imgv = Variable(cover_img)
+
+        container_img = hide_net(concat_imgv)
+        err_hide = criterion(container_img, cover_imgv)
+        hide_losses.append(err_hide.item())
+
+        rev_secret_img = reveal_net(container_img)
+        secret_imgv = Variable(secret_img)
+        err_reveal = criterion(rev_secret_img, secret_imgv)
+        hide_losses.append(err_reveal.item())
+
+        if i % 10 == 0:
+            save_image_results(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
+                            './validation')
+
+    avg_hide_loss = np.mean(hide_losses)
+    avg_reveal_loss = np.mean(reveal_losses)
+    avg_sum_loss = avg_hide_loss + BETA * avg_reveal_loss
+
+    val_log = "validation[%d] avg_hide_loss = %.6f\t avg_reveal_loss = %.6f\t avg_sum_loss = %.6f" % (
+        epoch + 1, avg_hide_loss, avg_reveal_loss, avg_sum_loss)
+    print(val_log)
+
+    return avg_hide_loss, avg_reveal_loss, avg_sum_loss
+
+
+def save_image_results(this_batch_size, cover_image, container_image, secret_image, revealed_image, epoch, i, save_path):
+        # TODO: might not need this?
+        # with torch.no_grad():
+        #     originalFrames = cover_image.resize_(this_batch_size, 3, 256, 256)
+        #     containerFrames = container_image.resize_(this_batch_size, 3, 256, 256)
+        #     secretFrames = secret_image.resize_(this_batch_size, 3, 256, 256)
+        #     revSecFrames = revealed_image.resize_(this_batch_size, 3, 256, 256)
+
+        showContainer = torch.cat([cover_image, container_image], 0)
+        showReveal = torch.cat([secret_image, revealed_image], 0)
+        resultImg = torch.cat([showContainer, showReveal], 0)
+        resultImgName = '%s/result_images_epoch%03d_batch%04d.png' % (save_path, epoch, i)
+        vutils.save_image(resultImg, resultImgName, nrow=this_batch_size, padding=1, normalize=True)
+
+
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        m.weight.data.normal_(0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        m.weight.data.normal_(1.0, 0.02)
+        m.bias.data.fill_(0)
 
 
 if __name__ == "__main__":
     train_dataset = TinyImageNet(split='train', transform=transforms.Compose([
+        transforms.Resize([256, 256]),
         transforms.ToTensor(),
-        transforms.Normalize(mean=MEAN, std=STD)
     ]))
-    test_dataset = TinyImageNet(split='val', transform=transforms.Compose([
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE,
+                                                   shuffle=True, drop_last=True)
+
+    val_dataset = TinyImageNet(split='val', transform=transforms.Compose([
+        transforms.Resize([256, 256]),
         transforms.ToTensor(),
-        transforms.Normalize(mean=MEAN, std=STD)
     ]))
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
-
-    model = model.CNN()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=BATCH_SIZE,
+                                                 drop_last=True)
     print("Number of training examples: ", len(train_dataset))
-    print("Number of validation examples: ", len(test_dataset))
-    print("Number of parameters in the model: ", num_params)
+    print("Number of validation examples: ", len(val_dataset))
 
-    # Train the model
-    model.train()
-    loss_history = []
+    hide_net = model.HideNet()
+    hide_net.apply(weights_init)
+    print_net(hide_net)
+
+    reveal_net = model.RevealNet()
+    reveal_net.apply(weights_init)
+    print_net(reveal_net)
+
+    criterion = nn.MSELoss()
+    optimizerH = optim.Adam(hide_net.parameters(), lr=0.001, betas=(0.5, 0.999))
+    schedulerH = ReduceLROnPlateau(optimizerH, mode='min', factor=0.2, patience=5, verbose=True)
+    optimizerR = optim.Adam(reveal_net.parameters(), lr=0.001, betas=(0.5, 0.999))
+    schedulerR = ReduceLROnPlateau(optimizerR, mode='min', factor=0.2, patience=8, verbose=True)
+
+    smallestLoss = sys.maxsize
     for epoch in range(EPOCHS):
-        train_losses = []
-        for idx, input in enumerate(train_dataloader):
+        train(train_dataloader, epoch, hide_net=hide_net, reveal_net=reveal_net, criterion=criterion)
 
-            # Reject if not 3 channel tensor
-            if len(input.size()) == 4 and input.size()[1] != 3:
-                print("skipping tensor that does not have 3 channels (RGB)")
-                continue
+        with torch.no_grad():
+            hide_loss, reveal_loss, sum_loss = validate(val_dataloader, epoch, hide_net=hide_net, reveal_net=reveal_net, criterion=criterion)
 
-            if len(input) != BATCH_SIZE:
-                print(len(input))
-                print(input.shape)
-                print("skipping batch that is not of length 2")
-                continue
+        schedulerH.step(sum_loss)
+        schedulerR.step(reveal_loss)
 
-            # We split training set into two halves.
-            # First half is used for training as secret images, second half for cover images.
-            train_secrets = input[len(input)//2:]
-            train_covers = input[:len(input)//2]
-
-            # Creates variable from secret and cover images
-            train_secrets = Variable(train_secrets, requires_grad=False)
-            train_covers = Variable(train_covers, requires_grad=False)
-
-            # Forward + Backward + Optimize
-            optimizer.zero_grad()
-            train_hidden, train_revealed = model(train_secrets, train_covers)
-
-            # Calculate loss and perform backprop
-            train_loss, train_loss_cover, train_loss_secret = full_loss(train_revealed, train_hidden, train_secrets, train_covers, BETA)
-            train_loss.backward()
-            optimizer.step()
-
-            # Saves training loss
-            train_losses.append(train_loss.item())
-            loss_history.append(train_loss.item())
-
-            print('Training: Batch {0}/{1}. Loss of {2:.4f}, cover loss of {3:.4f}, secret loss of {4:.4f}'.format(
-                idx+1, len(train_dataloader), train_loss.item(), train_loss_cover.item(), train_loss_secret.item()))
-
-        mean_train_loss = np.mean(train_losses)
-
-        # Prints epoch average loss
-        print('Epoch [{0}/{1}], Average_loss: {2:.4f}'.format(epoch + 1, EPOCHS, mean_train_loss))
-
-    plt.plot(loss_history)
-    plt.title('Model loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Batch')
-    plt.show()
-
-    # save the model for future reference
-    torch.save(model, "model.pth")
-
-    # model = torch.load("model.pth")
-
-    test_losses = []
-    model.eval()
-
-    # Test the model
-    for idx, input in enumerate(test_dataloader):
-        if len(input.size()) == 4 and input.size()[1] != 3:
-            print("skipping tensor that does not have 3 channels (RGB)")
-            continue
-
-        if len(input) != BATCH_SIZE:
-            print(len(input))
-            print(input.shape)
-            print("skipping batch that is not of length 2")
-            continue
-
-        test_secret = input[:len(input)//2]
-        test_cover = input[len(input)//2:]
-        test_secret = Variable(test_secret, volatile=True)
-        test_cover = Variable(test_cover, volatile=True)
-
-        # Compute output
-        test_hidden, test_revealed = model(test_secret, test_cover)
-
-        # Calculate loss
-        test_loss, loss_cover, loss_secret = full_loss(test_revealed, test_hidden, test_secret, test_cover, BETA)
-        print('Total loss: {:.2f} \nLoss on secret: {:.2f} \nLoss on cover: {:.2f}'.format(test_loss.item(), loss_secret.item(), loss_cover.item()))
-
-        # Creates img tensor
-        if idx % 11 == 0:
-            imgs = [test_secret.data, test_cover.data, test_hidden.data, test_revealed.data]
-            imgs_tsor = torch.cat(imgs, 0)
-            imshow(utils.make_grid(imgs_tsor), idx + 1, learning_rate=LEARNING_RATE, beta=BETA)
-
-        test_losses.append(test_loss.item())
-
-    mean_test_loss = np.mean(test_losses)
-    print('Average loss on test set: {:.2f}'.format(mean_test_loss))
+        if sum_loss < smallestLoss:
+            smallestLoss = sum_loss
+            torch.save(hide_net,
+                       './checkpoints/hide_net_epoch_%d,sum_loss=%.6f,hide_loss=%.6f.pth' % (
+                        epoch, sum_loss, hide_loss))
+            torch.save(reveal_net,
+                       './checkpoints/reveal_net_epoch_%d,sum_loss=%.6f,reveal_loss=%.6f.pth' % (
+                        epoch, sum_loss, reveal_loss))

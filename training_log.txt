@@ -1,0 +1,229 @@
+/opt/anaconda3/envs/cse576/bin/python /Users/austingebauer/Workspace/uw/deep-steganography/main.py
+UnetGenerator(
+  (model): UnetSkipConnectionBlock(
+    (model): Sequential(
+      (0): Conv2d(6, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+      (1): UnetSkipConnectionBlock(
+        (model): Sequential(
+          (0): LeakyReLU(negative_slope=0.2, inplace=True)
+          (1): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+          (2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (3): UnetSkipConnectionBlock(
+            (model): Sequential(
+              (0): LeakyReLU(negative_slope=0.2, inplace=True)
+              (1): Conv2d(128, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+              (2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+              (3): UnetSkipConnectionBlock(
+                (model): Sequential(
+                  (0): LeakyReLU(negative_slope=0.2, inplace=True)
+                  (1): Conv2d(256, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                  (2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                  (3): UnetSkipConnectionBlock(
+                    (model): Sequential(
+                      (0): LeakyReLU(negative_slope=0.2, inplace=True)
+                      (1): Conv2d(512, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                      (2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                      (3): UnetSkipConnectionBlock(
+                        (model): Sequential(
+                          (0): LeakyReLU(negative_slope=0.2, inplace=True)
+                          (1): Conv2d(512, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                          (2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                          (3): UnetSkipConnectionBlock(
+                            (model): Sequential(
+                              (0): LeakyReLU(negative_slope=0.2, inplace=True)
+                              (1): Conv2d(512, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                              (2): ReLU(inplace=True)
+                              (3): ConvTranspose2d(512, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                              (4): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                            )
+                          )
+                          (4): ReLU(inplace=True)
+                          (5): ConvTranspose2d(1024, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                          (6): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                        )
+                      )
+                      (4): ReLU(inplace=True)
+                      (5): ConvTranspose2d(1024, 512, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                      (6): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                    )
+                  )
+                  (4): ReLU(inplace=True)
+                  (5): ConvTranspose2d(1024, 256, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+                  (6): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (4): ReLU(inplace=True)
+              (5): ConvTranspose2d(512, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+              (6): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            )
+          )
+          (4): ReLU(inplace=True)
+          (5): ConvTranspose2d(256, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1), bias=False)
+          (6): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (2): ReLU(inplace=True)
+      (3): ConvTranspose2d(128, 3, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (4): Sigmoid()
+    )
+  )
+)
+Total number of parameters: 41832067
+RevealNet(
+  (main): Sequential(
+    (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU(inplace=True)
+    (3): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (5): ReLU(inplace=True)
+    (6): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (7): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (8): ReLU(inplace=True)
+    (9): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (10): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (11): ReLU(inplace=True)
+    (12): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (13): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (14): ReLU(inplace=True)
+    (15): Conv2d(64, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (16): Sigmoid()
+  )
+)
+Total number of parameters: 742659
+Number of training examples:  1176
+Number of validation examples:  489
+[0/3][0/36]	Loss_H: 0.0889 Loss_R: 0.0844 Loss_sum: 0.1522 	datatime: 0.0479 	batchtime: 67.7688
+[0/3][1/36]	Loss_H: 0.0587 Loss_R: 0.0621 Loss_sum: 0.1053 	datatime: 0.9243 	batchtime: 67.7815
+[0/3][2/36]	Loss_H: 0.0670 Loss_R: 0.0337 Loss_sum: 0.0923 	datatime: 0.0768 	batchtime: 64.0856
+[0/3][3/36]	Loss_H: 0.0499 Loss_R: 0.0326 Loss_sum: 0.0743 	datatime: 0.0761 	batchtime: 65.7393
+[0/3][4/36]	Loss_H: 0.0543 Loss_R: 0.1158 Loss_sum: 0.1411 	datatime: 0.0800 	batchtime: 61.4071
+[0/3][5/36]	Loss_H: 0.0466 Loss_R: 0.0334 Loss_sum: 0.0716 	datatime: 0.0693 	batchtime: 60.3184
+[0/3][6/36]	Loss_H: 0.0310 Loss_R: 0.0264 Loss_sum: 0.0508 	datatime: 0.0745 	batchtime: 60.9623
+[0/3][7/36]	Loss_H: 0.0309 Loss_R: 0.0275 Loss_sum: 0.0515 	datatime: 0.0707 	batchtime: 60.2943
+[0/3][8/36]	Loss_H: 0.0296 Loss_R: 0.0429 Loss_sum: 0.0618 	datatime: 0.0826 	batchtime: 65.2848
+[0/3][9/36]	Loss_H: 0.0233 Loss_R: 0.0369 Loss_sum: 0.0510 	datatime: 0.0796 	batchtime: 62.8037
+[0/3][10/36]	Loss_H: 0.0270 Loss_R: 0.0240 Loss_sum: 0.0450 	datatime: 0.0736 	batchtime: 61.1123
+[0/3][11/36]	Loss_H: 0.0237 Loss_R: 0.0238 Loss_sum: 0.0416 	datatime: 1.1525 	batchtime: 63.9497
+[0/3][12/36]	Loss_H: 0.0203 Loss_R: 0.0217 Loss_sum: 0.0366 	datatime: 0.0831 	batchtime: 60.5193
+[0/3][13/36]	Loss_H: 0.0200 Loss_R: 0.0189 Loss_sum: 0.0342 	datatime: 0.0757 	batchtime: 63.4238
+[0/3][14/36]	Loss_H: 0.0185 Loss_R: 0.0178 Loss_sum: 0.0319 	datatime: 0.0757 	batchtime: 66.0120
+[0/3][15/36]	Loss_H: 0.0160 Loss_R: 0.0224 Loss_sum: 0.0328 	datatime: 0.0822 	batchtime: 64.4085
+[0/3][16/36]	Loss_H: 0.0131 Loss_R: 0.0303 Loss_sum: 0.0359 	datatime: 0.0780 	batchtime: 63.1140
+[0/3][17/36]	Loss_H: 0.0186 Loss_R: 0.0319 Loss_sum: 0.0425 	datatime: 0.0801 	batchtime: 64.2742
+[0/3][18/36]	Loss_H: 0.0153 Loss_R: 0.0288 Loss_sum: 0.0369 	datatime: 0.0851 	batchtime: 67.4591
+[0/3][19/36]	Loss_H: 0.0150 Loss_R: 0.0160 Loss_sum: 0.0270 	datatime: 0.0837 	batchtime: 61.1859
+[0/3][20/36]	Loss_H: 0.0270 Loss_R: 0.0165 Loss_sum: 0.0394 	datatime: 0.0778 	batchtime: 60.8402
+[0/3][21/36]	Loss_H: 0.0183 Loss_R: 0.0226 Loss_sum: 0.0353 	datatime: 1.2010 	batchtime: 62.9530
+[0/3][22/36]	Loss_H: 0.0101 Loss_R: 0.0200 Loss_sum: 0.0251 	datatime: 0.0828 	batchtime: 65.7212
+[0/3][23/36]	Loss_H: 0.0120 Loss_R: 0.0162 Loss_sum: 0.0242 	datatime: 0.0790 	batchtime: 65.8624
+[0/3][24/36]	Loss_H: 0.0107 Loss_R: 0.0162 Loss_sum: 0.0229 	datatime: 0.0807 	batchtime: 62.5491
+[0/3][25/36]	Loss_H: 0.0105 Loss_R: 0.0220 Loss_sum: 0.0270 	datatime: 0.0781 	batchtime: 60.7536
+[0/3][26/36]	Loss_H: 0.0155 Loss_R: 0.0243 Loss_sum: 0.0337 	datatime: 0.0790 	batchtime: 60.8144
+[0/3][27/36]	Loss_H: 0.0133 Loss_R: 0.0166 Loss_sum: 0.0257 	datatime: 0.0807 	batchtime: 60.3091
+[0/3][28/36]	Loss_H: 0.0100 Loss_R: 0.0181 Loss_sum: 0.0236 	datatime: 0.0788 	batchtime: 59.7906
+[0/3][29/36]	Loss_H: 0.0152 Loss_R: 0.0183 Loss_sum: 0.0289 	datatime: 0.0819 	batchtime: 60.5947
+[0/3][30/36]	Loss_H: 0.0095 Loss_R: 0.0288 Loss_sum: 0.0311 	datatime: 0.0829 	batchtime: 63.8299
+[0/3][31/36]	Loss_H: 0.0129 Loss_R: 0.0259 Loss_sum: 0.0323 	datatime: 1.2142 	batchtime: 62.2554
+[0/3][32/36]	Loss_H: 0.0090 Loss_R: 0.0153 Loss_sum: 0.0205 	datatime: 0.0798 	batchtime: 59.3486
+[0/3][33/36]	Loss_H: 0.0103 Loss_R: 0.0171 Loss_sum: 0.0232 	datatime: 0.0790 	batchtime: 60.3902
+[0/3][34/36]	Loss_H: 0.0095 Loss_R: 0.0274 Loss_sum: 0.0300 	datatime: 0.0808 	batchtime: 59.3312
+[0/3][35/36]	Loss_H: 0.0103 Loss_R: 0.0140 Loss_sum: 0.0208 	datatime: 0.0798 	batchtime: 62.4280
+one epoch time is 2259.6763======================================================================
+epoch learning rate: optimizerH_lr = 0.00100000      optimizerR_lr = 0.00100000
+epoch_Hloss=0.024218	epoch_Rloss=0.029184	epoch_sumLoss=0.046106
+#################################################### validation begin ########################################################
+/Users/austingebauer/Workspace/uw/deep-steganography/main.py:151: UserWarning: volatile was removed and now has no effect. Use `with torch.no_grad():` instead.
+  concat_imgv = Variable(concat_img, volatile=True)
+/Users/austingebauer/Workspace/uw/deep-steganography/main.py:152: UserWarning: volatile was removed and now has no effect. Use `with torch.no_grad():` instead.
+  cover_imgv = Variable(cover_img, volatile=True)
+/Users/austingebauer/Workspace/uw/deep-steganography/main.py:159: UserWarning: volatile was removed and now has no effect. Use `with torch.no_grad():` instead.
+  secret_imgv = Variable(secret_img, volatile=True)
+validation[0] val_Hloss = 0.024923	 val_Rloss = 0.114347	 val_Sumloss = 0.110683	 validation time=324.71
+#################################################### validation end ########################################################
+[1/3][0/36]	Loss_H: 0.0114 Loss_R: 0.0167 Loss_sum: 0.0239 	datatime: 0.1043 	batchtime: 58.9422
+[1/3][1/36]	Loss_H: 0.0095 Loss_R: 0.0178 Loss_sum: 0.0228 	datatime: 1.1798 	batchtime: 59.3635
+[1/3][2/36]	Loss_H: 0.0103 Loss_R: 0.0153 Loss_sum: 0.0218 	datatime: 0.0790 	batchtime: 58.0646
+[1/3][3/36]	Loss_H: 0.0101 Loss_R: 0.0171 Loss_sum: 0.0230 	datatime: 0.0850 	batchtime: 58.2796
+[1/3][4/36]	Loss_H: 0.0076 Loss_R: 0.0378 Loss_sum: 0.0360 	datatime: 0.0786 	batchtime: 58.9354
+[1/3][5/36]	Loss_H: 0.0206 Loss_R: 0.0456 Loss_sum: 0.0548 	datatime: 0.0833 	batchtime: 58.2119
+[1/3][6/36]	Loss_H: 0.0108 Loss_R: 0.0146 Loss_sum: 0.0217 	datatime: 0.0818 	batchtime: 58.7354
+[1/3][7/36]	Loss_H: 0.0126 Loss_R: 0.0179 Loss_sum: 0.0260 	datatime: 0.0825 	batchtime: 62.6293
+[1/3][8/36]	Loss_H: 0.0117 Loss_R: 0.0139 Loss_sum: 0.0221 	datatime: 0.0850 	batchtime: 63.6288
+[1/3][9/36]	Loss_H: 0.0115 Loss_R: 0.0127 Loss_sum: 0.0211 	datatime: 0.0779 	batchtime: 65.5610
+[1/3][10/36]	Loss_H: 0.0125 Loss_R: 0.0147 Loss_sum: 0.0236 	datatime: 0.0855 	batchtime: 66.0968
+[1/3][11/36]	Loss_H: 0.0158 Loss_R: 0.0119 Loss_sum: 0.0247 	datatime: 1.2452 	batchtime: 67.8834
+[1/3][12/36]	Loss_H: 0.0178 Loss_R: 0.0132 Loss_sum: 0.0277 	datatime: 0.0836 	batchtime: 67.8165
+[1/3][13/36]	Loss_H: 0.0093 Loss_R: 0.0151 Loss_sum: 0.0207 	datatime: 0.0822 	batchtime: 63.0982
+[1/3][14/36]	Loss_H: 0.0083 Loss_R: 0.0198 Loss_sum: 0.0232 	datatime: 0.0811 	batchtime: 67.2663
+[1/3][15/36]	Loss_H: 0.0075 Loss_R: 0.0200 Loss_sum: 0.0225 	datatime: 0.0814 	batchtime: 62.3396
+[1/3][16/36]	Loss_H: 0.0075 Loss_R: 0.0123 Loss_sum: 0.0168 	datatime: 0.0827 	batchtime: 60.6753
+[1/3][17/36]	Loss_H: 0.0079 Loss_R: 0.0181 Loss_sum: 0.0214 	datatime: 0.0855 	batchtime: 59.6420
+[1/3][18/36]	Loss_H: 0.0094 Loss_R: 0.0145 Loss_sum: 0.0202 	datatime: 0.0820 	batchtime: 60.7813
+[1/3][19/36]	Loss_H: 0.0068 Loss_R: 0.0131 Loss_sum: 0.0165 	datatime: 0.0861 	batchtime: 59.5542
+[1/3][20/36]	Loss_H: 0.0184 Loss_R: 0.0157 Loss_sum: 0.0301 	datatime: 0.0867 	batchtime: 63.4933
+[1/3][21/36]	Loss_H: 0.0085 Loss_R: 0.0137 Loss_sum: 0.0188 	datatime: 1.1363 	batchtime: 64.3988
+[1/3][22/36]	Loss_H: 0.0100 Loss_R: 0.0154 Loss_sum: 0.0216 	datatime: 0.0784 	batchtime: 62.6475
+[1/3][23/36]	Loss_H: 0.0125 Loss_R: 0.0209 Loss_sum: 0.0282 	datatime: 0.0880 	batchtime: 62.1755
+[1/3][24/36]	Loss_H: 0.0069 Loss_R: 0.0156 Loss_sum: 0.0186 	datatime: 0.0860 	batchtime: 58.6740
+[1/3][25/36]	Loss_H: 0.0069 Loss_R: 0.0154 Loss_sum: 0.0184 	datatime: 0.0830 	batchtime: 59.9657
+[1/3][26/36]	Loss_H: 0.0074 Loss_R: 0.0154 Loss_sum: 0.0190 	datatime: 0.0880 	batchtime: 58.4662
+[1/3][27/36]	Loss_H: 0.0127 Loss_R: 0.0252 Loss_sum: 0.0315 	datatime: 0.0875 	batchtime: 61.0846
+[1/3][28/36]	Loss_H: 0.0080 Loss_R: 0.0164 Loss_sum: 0.0203 	datatime: 0.0824 	batchtime: 60.6547
+[1/3][29/36]	Loss_H: 0.0091 Loss_R: 0.0203 Loss_sum: 0.0243 	datatime: 0.0905 	batchtime: 59.9448
+[1/3][30/36]	Loss_H: 0.0077 Loss_R: 0.0248 Loss_sum: 0.0263 	datatime: 0.0827 	batchtime: 63.6832
+[1/3][31/36]	Loss_H: 0.0111 Loss_R: 0.0121 Loss_sum: 0.0202 	datatime: 1.2135 	batchtime: 63.8559
+[1/3][32/36]	Loss_H: 0.0073 Loss_R: 0.0203 Loss_sum: 0.0225 	datatime: 0.0881 	batchtime: 61.1245
+[1/3][33/36]	Loss_H: 0.0094 Loss_R: 0.0184 Loss_sum: 0.0232 	datatime: 0.0908 	batchtime: 60.7641
+[1/3][34/36]	Loss_H: 0.0049 Loss_R: 0.0176 Loss_sum: 0.0180 	datatime: 0.0904 	batchtime: 60.6113
+[1/3][35/36]	Loss_H: 0.0051 Loss_R: 0.0108 Loss_sum: 0.0132 	datatime: 0.0925 	batchtime: 58.9562
+one epoch time is 2218.0058======================================================================
+epoch learning rate: optimizerH_lr = 0.00100000      optimizerR_lr = 0.00100000
+epoch_Hloss=0.010126	epoch_Rloss=0.017779	epoch_sumLoss=0.023460
+#################################################### validation begin ########################################################
+validation[1] val_Hloss = 0.008076	 val_Rloss = 0.030733	 val_Sumloss = 0.031126	 validation time=331.27
+#################################################### validation end ########################################################
+[2/3][0/36]	Loss_H: 0.0099 Loss_R: 0.0098 Loss_sum: 0.0173 	datatime: 0.0778 	batchtime: 58.7889
+[2/3][1/36]	Loss_H: 0.0060 Loss_R: 0.0085 Loss_sum: 0.0124 	datatime: 1.1155 	batchtime: 64.4115
+[2/3][2/36]	Loss_H: 0.0069 Loss_R: 0.0121 Loss_sum: 0.0160 	datatime: 0.0872 	batchtime: 59.9909
+[2/3][3/36]	Loss_H: 0.0062 Loss_R: 0.0120 Loss_sum: 0.0152 	datatime: 0.0815 	batchtime: 60.0585
+[2/3][4/36]	Loss_H: 0.0046 Loss_R: 0.0087 Loss_sum: 0.0111 	datatime: 0.0843 	batchtime: 60.3493
+[2/3][5/36]	Loss_H: 0.0065 Loss_R: 0.0094 Loss_sum: 0.0135 	datatime: 0.0822 	batchtime: 63.5745
+[2/3][6/36]	Loss_H: 0.0046 Loss_R: 0.0178 Loss_sum: 0.0180 	datatime: 0.0838 	batchtime: 58.7475
+[2/3][7/36]	Loss_H: 0.0053 Loss_R: 0.0250 Loss_sum: 0.0241 	datatime: 0.0882 	batchtime: 60.3967
+[2/3][8/36]	Loss_H: 0.0080 Loss_R: 0.0229 Loss_sum: 0.0251 	datatime: 0.0836 	batchtime: 59.0523
+[2/3][9/36]	Loss_H: 0.0083 Loss_R: 0.0182 Loss_sum: 0.0220 	datatime: 0.0850 	batchtime: 61.9403
+[2/3][10/36]	Loss_H: 0.0098 Loss_R: 0.0200 Loss_sum: 0.0248 	datatime: 0.0811 	batchtime: 62.8176
+[2/3][11/36]	Loss_H: 0.0114 Loss_R: 0.0191 Loss_sum: 0.0258 	datatime: 1.1508 	batchtime: 62.8771
+[2/3][12/36]	Loss_H: 0.0121 Loss_R: 0.0150 Loss_sum: 0.0233 	datatime: 0.0880 	batchtime: 61.6417
+[2/3][13/36]	Loss_H: 0.0093 Loss_R: 0.0136 Loss_sum: 0.0196 	datatime: 0.0821 	batchtime: 62.6867
+[2/3][14/36]	Loss_H: 0.0062 Loss_R: 0.0130 Loss_sum: 0.0159 	datatime: 0.0808 	batchtime: 62.2075
+[2/3][15/36]	Loss_H: 0.0089 Loss_R: 0.0214 Loss_sum: 0.0249 	datatime: 0.0818 	batchtime: 62.5249
+[2/3][16/36]	Loss_H: 0.0116 Loss_R: 0.0353 Loss_sum: 0.0381 	datatime: 0.0812 	batchtime: 65.9336
+[2/3][17/36]	Loss_H: 0.0099 Loss_R: 0.0186 Loss_sum: 0.0238 	datatime: 0.0883 	batchtime: 63.6161
+[2/3][18/36]	Loss_H: 0.0048 Loss_R: 0.0142 Loss_sum: 0.0154 	datatime: 0.0850 	batchtime: 65.0386
+[2/3][19/36]	Loss_H: 0.0058 Loss_R: 0.0139 Loss_sum: 0.0163 	datatime: 0.0843 	batchtime: 62.4323
+[2/3][20/36]	Loss_H: 0.0046 Loss_R: 0.0123 Loss_sum: 0.0138 	datatime: 0.0818 	batchtime: 61.6786
+[2/3][21/36]	Loss_H: 0.0059 Loss_R: 0.0096 Loss_sum: 0.0131 	datatime: 1.1789 	batchtime: 63.4873
+[2/3][22/36]	Loss_H: 0.0047 Loss_R: 0.0103 Loss_sum: 0.0125 	datatime: 0.0828 	batchtime: 64.3928
+[2/3][23/36]	Loss_H: 0.0049 Loss_R: 0.0192 Loss_sum: 0.0193 	datatime: 0.0789 	batchtime: 63.0961
+[2/3][24/36]	Loss_H: 0.0041 Loss_R: 0.0070 Loss_sum: 0.0093 	datatime: 0.0890 	batchtime: 62.1265
+[2/3][25/36]	Loss_H: 0.0040 Loss_R: 0.0130 Loss_sum: 0.0138 	datatime: 0.0841 	batchtime: 64.6086
+[2/3][26/36]	Loss_H: 0.0088 Loss_R: 0.0139 Loss_sum: 0.0192 	datatime: 0.0820 	batchtime: 64.1743
+[2/3][27/36]	Loss_H: 0.0039 Loss_R: 0.0153 Loss_sum: 0.0153 	datatime: 0.0842 	batchtime: 67.1607
+[2/3][28/36]	Loss_H: 0.0069 Loss_R: 0.0165 Loss_sum: 0.0193 	datatime: 0.0809 	batchtime: 65.0989
+[2/3][29/36]	Loss_H: 0.0056 Loss_R: 0.0122 Loss_sum: 0.0148 	datatime: 0.0821 	batchtime: 66.8629
+[2/3][30/36]	Loss_H: 0.0037 Loss_R: 0.0137 Loss_sum: 0.0140 	datatime: 0.0864 	batchtime: 64.6199
+[2/3][31/36]	Loss_H: 0.0093 Loss_R: 0.0154 Loss_sum: 0.0208 	datatime: 1.4043 	batchtime: 66.6591
+[2/3][32/36]	Loss_H: 0.0042 Loss_R: 0.0085 Loss_sum: 0.0106 	datatime: 0.0856 	batchtime: 64.5085
+[2/3][33/36]	Loss_H: 0.0050 Loss_R: 0.0134 Loss_sum: 0.0150 	datatime: 0.0867 	batchtime: 65.4618
+[2/3][34/36]	Loss_H: 0.0047 Loss_R: 0.0288 Loss_sum: 0.0263 	datatime: 0.0858 	batchtime: 61.5637
+[2/3][35/36]	Loss_H: 0.0038 Loss_R: 0.0123 Loss_sum: 0.0130 	datatime: 0.0904 	batchtime: 60.1799
+one epoch time is 2264.7659======================================================================
+epoch learning rate: optimizerH_lr = 0.00100000      optimizerR_lr = 0.00100000
+epoch_Hloss=0.006670	epoch_Rloss=0.015284	epoch_sumLoss=0.018133
+#################################################### validation begin ########################################################
+validation[2] val_Hloss = 0.005362	 val_Rloss = 0.036472	 val_Sumloss = 0.032716	 validation time=364.36
+#################################################### validation end ########################################################
+
+Process finished with exit code 0

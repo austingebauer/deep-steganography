@@ -11,13 +11,13 @@ TRAIN_DIR = "train"
 VALIDATION_DIR = "val"
 
 class TinyImageNet(torch.utils.data.Dataset):
-    def __init__(self, root_dir="./tiny-imagenet-200", split='train', transform=None, images_per_class_train=10, num_test_images=500):
+    def __init__(self, root_dir="./tiny-imagenet-200", split='train', transform=None, images_per_class_train=6, num_val_images=500):
         verify_str_arg(split, "split", ("train", "val"))
         self.transform = transform
         self.train_dir = os.path.join(root_dir, TRAIN_DIR)
         self.val_dir = os.path.join(root_dir, VALIDATION_DIR)
         self.images_per_class = images_per_class_train
-        self.num_test_images = num_test_images
+        self.num_val_images = num_val_images
 
         if split == 'train':
             self.dataset = self.create_training_set()
@@ -54,7 +54,7 @@ class TinyImageNet(torch.utils.data.Dataset):
         val_dir = os.path.join(self.val_dir, IMAGES_DIR)
         val_images = os.listdir(val_dir)
 
-        for img_name_i in val_images[0:self.num_test_images]:
+        for img_name_i in val_images[0:self.num_val_images]:
             img_path = os.path.join(val_dir, img_name_i)
 
             # Ensure that the image is RGB
