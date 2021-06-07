@@ -190,18 +190,6 @@ if __name__ == "__main__":
         train_summary = train_summary + "epoch_avg_hide_loss=%.6f epoch_avg_reveal_loss=%.6f epoch_avg_sum_loss=%.6f" % (
             avg_hide_loss_t, avg_reveal_loss_t, avg_sum_loss_t)
         print(train_summary)
-
-        plt.plot(train_hide_losses)
-        plt.title('Training Loss - Hide Network')
-        plt.ylabel('Loss')
-        plt.xlabel('Batch')
-        plt.savefig('./loss_charts/train_hide_losses_epoch%d.png' % (epoch + 1))
-
-        plt.plot(train_reveal_losses)
-        plt.title('Training Loss - Reveal Network')
-        plt.ylabel('Loss')
-        plt.xlabel('Batch')
-        plt.savefig('./loss_charts/train_reveal_losses_epoch%d.png' % (epoch + 1))
         print("----- Training: END -----")
 
         print("----- Validation: START -----")
@@ -234,3 +222,15 @@ if __name__ == "__main__":
                            epoch, avg_sum_loss_v, avg_reveal_loss_v))
 
     print("Total elapsed seconds %d" % total_elapsed_seconds)
+    plt.plot(train_hide_losses)
+    plt.title('Training Loss - Hide Network')
+    plt.ylabel('Loss')
+    plt.xlabel('Batch')
+    plt.savefig('./loss_charts/train_hide_losses.png')
+
+    plt.clf()
+    plt.plot(train_reveal_losses)
+    plt.title('Training Loss - Reveal Network')
+    plt.ylabel('Loss')
+    plt.xlabel('Batch')
+    plt.savefig('./loss_charts/train_reveal_losses.png')
