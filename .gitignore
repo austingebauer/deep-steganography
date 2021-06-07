@@ -2,3 +2,5 @@
 .idea
 tiny-imagenet-200
 __pycache__/
+training
+validation

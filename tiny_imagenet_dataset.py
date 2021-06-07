@@ -11,7 +11,7 @@ TRAIN_DIR = "train"
 VALIDATION_DIR = "val"
 
 class TinyImageNet(torch.utils.data.Dataset):
-    def __init__(self, root_dir="./tiny-imagenet-200", split='train', transform=None, images_per_class_train=6, num_val_images=500):
+    def __init__(self, root_dir="./tiny-imagenet-200", split='train', transform=None, images_per_class_train=20, num_val_images=1000):
         verify_str_arg(split, "split", ("train", "val"))
         self.transform = transform
         self.train_dir = os.path.join(root_dir, TRAIN_DIR)
