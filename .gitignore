@@ -4,3 +4,5 @@ tiny-imagenet-200
 __pycache__/
 training
 validation
+checkpoints
+loss_charts
